@@ -1,4 +1,3 @@
-import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { createScene } from "./scene";
 import { createRenderer } from "./renderer";
@@ -26,9 +25,10 @@ export function initThree(
   };
   window.addEventListener("resize", onResize);
 
-  window.addEventListener("keydown", (event) => {
+  const onKeyDown = (event: KeyboardEvent) => {
     equalizer.control(event.key);
-  });
+  };
+  window.addEventListener("keydown", onKeyDown);
 
   const animate = () => {
     if (!running) return;
@@ -49,6 +49,7 @@ export function initThree(
     dispose() {
       running = false;
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("keydown", onKeyDown);
       renderer.dispose();
       container.removeChild(renderer.domElement);
     },

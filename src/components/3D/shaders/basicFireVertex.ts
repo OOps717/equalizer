@@ -3,9 +3,11 @@ precision highp float;
 
 uniform float uTime;
 uniform float uBass;
+uniform float uRadius;
 
 varying float vHeat;
 varying float vHeight;
+varying float vAlpha;
 
 // 2D hash
 float hash(vec2 p) {
@@ -26,30 +28,40 @@ float noise(vec2 p) {
 }
 
 void main() {
-    vec3 pos = position;
+    float h = clamp(position.y / uRadius * 0.5 + 0.5, 0.0, 1.0);
+    float radial = clamp(length(position.xz) / uRadius, 0.0, 1.0);
+    float angle = atan(position.z, position.x);
 
-    // height
-    float h = clamp(pos.y * 0.5 + 0.5, 0.0, 1.0);
+    float bass = pow(uBass, 1.7);
+    float verticalNoise = noise(vec2(angle * 2.0, h * 5.0 - uTime * 1.8));
+    float sideNoise = noise(vec2(angle * 3.0 + uTime * 0.7, h * 7.0));
+    float lickNoise = noise(vec2(position.x * 0.7 + uTime, position.z * 0.7 - uTime));
+
+    float flameHeight = 7.5 + bass * 3.5;
+    float taper = pow(1.0 - h, 1.45);
+    float width = (0.18 + taper * 1.8) * (0.75 + bass * 0.35);
+
+    vec3 pos = vec3(0.0);
+    pos.y = h * flameHeight - 3.4;
+    pos.y += (verticalNoise - 0.5) * (0.5 + h * 1.4 + bass);
+
+    float swirl = (sideNoise - 0.5) * (1.0 - h) * (1.0 + bass);
+    float lick = (lickNoise - 0.5) * h * (1.0 - h) * 1.8;
+    float r = radial * width;
+
+    pos.x = cos(angle + swirl * 0.8) * r + lick;
+    pos.z = sin(angle + swirl * 0.8) * r + lick * 0.45;
+
     vHeight = h;
-
-    // fire intensity
-    float intensity = pow(uBass, 2.0);
-
-    // vertical rise
-    float rise = h * (2.5 + intensity * 6.0);
-
-    float n = noise(vec2(pos.x * 2.0, uTime * 1.2 + h * 3.0));
-    float swirl = (n - 0.5) * (1.0 - h) * 1.2;
-
-    pos.y += rise;
-    pos.x += swirl;
-    pos.z += swirl * 0.6;
-
-    // "temperature"
-    vHeat = clamp(h + intensity * 0.6, 0.0, 1.0);
+    vHeat = clamp(1.05 - h * 0.82 + bass * 0.35 + verticalNoise * 0.18, 0.0, 1.0);
+    vAlpha = smoothstep(0.0, 0.12, h) * (1.0 - smoothstep(0.72, 1.0, h));
+    vAlpha *= 0.45 + verticalNoise * 0.55;
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-    gl_PointSize = mix(18.0, 3.0, h);
+
+    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+    float size = mix(24.0, 5.0, h) * (0.8 + bass * 0.8);
+    gl_PointSize = size * (20.0 / -mvPosition.z);
 }
 `;
 

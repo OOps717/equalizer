@@ -33,8 +33,8 @@ export default class Equalizer {
 
   private influences: Float32Array;
   private noiseOffsets: Float32Array;
-  private fireLife: Float32Array;
-  private fireSpeed: Float32Array;
+  private fireLife!: Float32Array;
+  private fireSpeed!: Float32Array;
 
   private lastTime: number = performance.now();
 
@@ -134,6 +134,7 @@ export default class Equalizer {
         uniforms: {
           uTime: { value: 0 },
           uBass: { value: 0 },
+          uRadius: { value: this.radius },
         },
         vertexShader,
         fragmentShader,
@@ -197,7 +198,7 @@ export default class Equalizer {
   }
 
   animateBasicSphere(strength = 2, smoothing = 0.1) {
-    const { bass, mid, high, raw } = this.getAudioBands();
+    const { bass, mid, high } = this.getAudioBands();
     const volume = this.audioPlayer.sound.getVolume();
     const pos = this.points.geometry.attributes
       .position as THREE.BufferAttribute;
